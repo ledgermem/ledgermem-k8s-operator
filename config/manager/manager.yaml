@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ledgermem-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ledgermem-operator
+  namespace: ledgermem-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledgermem-operator
+  namespace: ledgermem-system
+  labels:
+    app: ledgermem-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ledgermem-operator
+  template:
+    metadata:
+      labels:
+        app: ledgermem-operator
+    spec:
+      serviceAccountName: ledgermem-operator
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: manager
+          image: ghcr.io/ledgermem/ledgermem-k8s-operator:latest
+          args:
+            - --leader-elect
+          ports:
+            - { name: metrics, containerPort: 8080 }
+            - { name: health,  containerPort: 8081 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: health }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /readyz, port: health }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: 500m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true

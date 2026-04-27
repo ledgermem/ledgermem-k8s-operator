@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ledgermem-postgres
+  namespace: default
+type: Opaque
+stringData:
+  password: change-me
+---
+apiVersion: ledgermem.io/v1alpha1
+kind: LedgerMemCluster
+metadata:
+  name: prod
+  namespace: default
+spec:
+  image: ghcr.io/ledgermem/ledgermem:latest
+  replicas: 2
+  postgres:
+    host: postgres.default.svc.cluster.local
+    port: 5432
+    database: ledgermem
+    sslMode: require
+    secretRef:
+      name: ledgermem-postgres
+      key: password
+  vectorStore:
+    provider: pgvector
+    indexName: ledgermem_vectors
+---
+apiVersion: ledgermem.io/v1alpha1
+kind: Workspace
+metadata:
+  name: acme
+  namespace: default
+spec:
+  clusterRef: prod
+  name: Acme Corp
+  slug: acme
+  plan: enterprise
+  retentionDays: 365
+---
+apiVersion: ledgermem.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: acme-ci
+  namespace: default
+spec:
+  workspaceRef: acme
+  name: ci-bot
+  scopes:
+    - memories:read
+    - memories:write
+  secretName: acme-ci-token
