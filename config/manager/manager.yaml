@@ -32,7 +32,10 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: manager
-          image: ghcr.io/ledgermem/ledgermem-k8s-operator:latest
+          # Pinned tag — overlays / kustomize edits should bump this rather
+          # than relying on :latest, which prevents reproducible rollouts and
+          # can silently introduce breaking operator changes.
+          image: ghcr.io/ledgermem/ledgermem-k8s-operator:v0.1.0
           args:
             - --leader-elect
           ports:

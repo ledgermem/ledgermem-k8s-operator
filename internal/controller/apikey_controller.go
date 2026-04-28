@@ -112,7 +112,22 @@ func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Type: "Ready", Status: metav1.ConditionTrue, Reason: "Created",
 		Message: "api key created and stored in secret", LastTransitionTime: metav1.Now(),
 	})
+	// Re-fetch + retry on conflict so a transient apiserver conflict during
+	// status update doesn't abort reconciliation, leaving us with a created
+	// upstream key but no APIKeyID recorded — which would cause the next
+	// reconcile to issue a *second* key.
 	if err := r.Status().Update(ctx, &key); err != nil {
+		if apierrors.IsConflict(err) {
+			var fresh ledgermemv1alpha1.ApiKey
+			if getErr := r.Get(ctx, req.NamespacedName, &fresh); getErr != nil {
+				return ctrl.Result{}, getErr
+			}
+			fresh.Status = key.Status
+			if updErr := r.Status().Update(ctx, &fresh); updErr != nil {
+				return ctrl.Result{}, updErr
+			}
+			return ctrl.Result{}, nil
+		}
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil

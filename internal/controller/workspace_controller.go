@@ -13,10 +13,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
 )
+
+const workspaceFinalizer = "ledgermem.io/workspace-finalizer"
 
 // WorkspaceReconciler reconciles a Workspace by calling the LedgerMem
 // admin API of the referenced cluster.
@@ -43,14 +46,53 @@ func (r *WorkspaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	// Already created — nothing to do for this scaffold reconciler.
-	if ws.Status.WorkspaceID != "" {
-		return ctrl.Result{}, nil
-	}
-
 	cli := r.HTTPClient
 	if cli == nil {
 		cli = &http.Client{Timeout: 15 * time.Second}
+	}
+
+	// Handle deletion: tear down the upstream workspace before letting the
+	// CR be garbage collected. Without this, deleting the CR orphans the
+	// workspace in LedgerMem's control plane.
+	if !ws.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&ws, workspaceFinalizer) {
+			if ws.Status.WorkspaceID != "" {
+				url := fmt.Sprintf("http://%s.%s.svc.cluster.local/v1/admin/workspaces/%s", ws.Spec.ClusterRef, ws.Namespace, ws.Status.WorkspaceID)
+				delReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				resp, err := cli.Do(delReq)
+				if err != nil {
+					logger.Error(err, "delete upstream workspace")
+					return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				}
+				resp.Body.Close()
+				// Treat 404 as already gone.
+				if resp.StatusCode >= 500 {
+					return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+				}
+			}
+			controllerutil.RemoveFinalizer(&ws, workspaceFinalizer)
+			if err := r.Update(ctx, &ws); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Ensure finalizer is set before any external side effect.
+	if !controllerutil.ContainsFinalizer(&ws, workspaceFinalizer) {
+		controllerutil.AddFinalizer(&ws, workspaceFinalizer)
+		if err := r.Update(ctx, &ws); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Already created — nothing to do.
+	if ws.Status.WorkspaceID != "" {
+		return ctrl.Result{}, nil
 	}
 
 	body, _ := json.Marshal(map[string]any{

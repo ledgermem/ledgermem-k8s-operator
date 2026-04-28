@@ -57,11 +57,21 @@ func (r *LedgerMemClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	// Sync ReadyReplicas from the Deployment back into status.
+	// Sync ReadyReplicas from the Deployment back into status. Surface the
+	// error so the controller requeues — silently dropping it leaves the CR
+	// reporting a stale ReadyReplicas forever when the apiserver returns a
+	// transient conflict / 5xx.
 	var dep appsv1.Deployment
 	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}, &dep); err == nil {
-		cluster.Status.ReadyReplicas = dep.Status.ReadyReplicas
-		_ = r.Status().Update(ctx, &cluster)
+		if cluster.Status.ReadyReplicas != dep.Status.ReadyReplicas {
+			cluster.Status.ReadyReplicas = dep.Status.ReadyReplicas
+			if err := r.Status().Update(ctx, &cluster); err != nil {
+				if apierrors.IsConflict(err) {
+					return ctrl.Result{Requeue: true}, nil
+				}
+				return ctrl.Result{}, fmt.Errorf("update status: %w", err)
+			}
+		}
 	}
 	return ctrl.Result{}, nil
 }
