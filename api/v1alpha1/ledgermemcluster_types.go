@@ -43,6 +43,12 @@ type LedgerMemClusterSpec struct {
 
 // LedgerMemClusterStatus reflects observed state.
 type LedgerMemClusterStatus struct {
+	// ObservedGeneration is the .metadata.generation the controller most
+	// recently reconciled. Consumers (kubectl wait, GitOps tooling) compare
+	// it against .metadata.generation to know whether ReadyReplicas reflects
+	// the current spec or a stale one.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// +optional
 	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
 	// +optional

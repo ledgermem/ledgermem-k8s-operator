@@ -57,14 +57,18 @@ func (r *LedgerMemClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	// Sync ReadyReplicas from the Deployment back into status. Surface the
-	// error so the controller requeues — silently dropping it leaves the CR
-	// reporting a stale ReadyReplicas forever when the apiserver returns a
-	// transient conflict / 5xx.
+	// Sync ReadyReplicas + ObservedGeneration from the Deployment back into
+	// status. ObservedGeneration is critical: without it, callers waiting on
+	// `status.readyReplicas` after a spec change can't tell whether the
+	// number reflects the new spec or the previous one — they will exit
+	// `kubectl wait` early on stale data. Surface update errors so the
+	// controller requeues on transient apiserver failures.
 	var dep appsv1.Deployment
 	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}, &dep); err == nil {
-		if cluster.Status.ReadyReplicas != dep.Status.ReadyReplicas {
+		if cluster.Status.ReadyReplicas != dep.Status.ReadyReplicas ||
+			cluster.Status.ObservedGeneration != cluster.Generation {
 			cluster.Status.ReadyReplicas = dep.Status.ReadyReplicas
+			cluster.Status.ObservedGeneration = cluster.Generation
 			if err := r.Status().Update(ctx, &cluster); err != nil {
 				if apierrors.IsConflict(err) {
 					return ctrl.Result{Requeue: true}, nil
