@@ -79,6 +79,19 @@ func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	defer resp.Body.Close()
+	// 4xx (except 429) is a permanent error — bad scopes, missing workspace,
+	// auth failure. Requeueing forever burns API quota and never recovers
+	// without user intervention. Mark Failed and stop. 429 + 5xx are
+	// transient: requeue with backoff via RequeueAfter.
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != http.StatusTooManyRequests {
+		key.Status.Conditions = append(key.Status.Conditions, metav1.Condition{
+			Type: "Ready", Status: metav1.ConditionFalse, Reason: "PermanentError",
+			Message:            fmt.Sprintf("api returned %d — fix the spec and re-create", resp.StatusCode),
+			LastTransitionTime: metav1.Now(),
+		})
+		_ = r.Status().Update(ctx, &key)
+		return ctrl.Result{}, nil
+	}
 	if resp.StatusCode >= 400 {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
