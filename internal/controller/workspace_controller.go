@@ -16,12 +16,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
+	getmnemov1alpha1 "github.com/getmnemo/getmnemo-k8s-operator/api/v1alpha1"
 )
 
-const workspaceFinalizer = "ledgermem.io/workspace-finalizer"
+const workspaceFinalizer = "getmnemo.io/workspace-finalizer"
 
-// WorkspaceReconciler reconciles a Workspace by calling the LedgerMem
+// WorkspaceReconciler reconciles a Workspace by calling the Mnemo
 // admin API of the referenced cluster.
 type WorkspaceReconciler struct {
 	client.Client
@@ -31,14 +31,14 @@ type WorkspaceReconciler struct {
 	HTTPClient *http.Client
 }
 
-// +kubebuilder:rbac:groups=ledgermem.io,resources=workspaces,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ledgermem.io,resources=workspaces/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=getmnemo.io,resources=workspaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=getmnemo.io,resources=workspaces/status,verbs=get;update;patch
 
 // Reconcile creates or updates the workspace upstream.
 func (r *WorkspaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithValues("workspace", req.NamespacedName)
 
-	var ws ledgermemv1alpha1.Workspace
+	var ws getmnemov1alpha1.Workspace
 	if err := r.Get(ctx, req.NamespacedName, &ws); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -53,7 +53,7 @@ func (r *WorkspaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Handle deletion: tear down the upstream workspace before letting the
 	// CR be garbage collected. Without this, deleting the CR orphans the
-	// workspace in LedgerMem's control plane.
+	// workspace in Mnemo's control plane.
 	if !ws.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(&ws, workspaceFinalizer) {
 			if ws.Status.WorkspaceID != "" {
@@ -135,6 +135,6 @@ func (r *WorkspaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager registers the controller.
 func (r *WorkspaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&ledgermemv1alpha1.Workspace{}).
+		For(&getmnemov1alpha1.Workspace{}).
 		Complete(r)
 }

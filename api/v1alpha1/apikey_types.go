@@ -6,7 +6,7 @@ import (
 )
 
 // ApiKeySpec describes a desired API key. The reconciler creates the key
-// against the LedgerMem admin API and writes the resulting plaintext token
+// against the Mnemo admin API and writes the resulting plaintext token
 // into a Secret (SecretName) in the same namespace.
 type ApiKeySpec struct {
 	WorkspaceRef string   `json:"workspaceRef"`
@@ -29,7 +29,7 @@ type ApiKeyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// ApiKey is a LedgerMem API key managed by the operator.
+// ApiKey is a Mnemo API key managed by the operator.
 type ApiKey struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

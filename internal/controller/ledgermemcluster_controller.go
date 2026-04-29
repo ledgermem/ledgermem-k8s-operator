@@ -1,4 +1,4 @@
-// Package controller holds reconcilers for the ledgermem.io API group.
+// Package controller holds reconcilers for the getmnemo.io API group.
 package controller
 
 import (
@@ -17,30 +17,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
+	getmnemov1alpha1 "github.com/getmnemo/getmnemo-k8s-operator/api/v1alpha1"
 )
 
 const (
-	defaultImage = "ghcr.io/ledgermem/ledgermem:latest"
+	defaultImage = "ghcr.io/getmnemo/getmnemo:latest"
 	httpPort     = int32(8080)
 )
 
-// LedgerMemClusterReconciler reconciles a LedgerMemCluster object.
-type LedgerMemClusterReconciler struct {
+// MnemoClusterReconciler reconciles a MnemoCluster object.
+type MnemoClusterReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ledgermem.io,resources=ledgermemclusters,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ledgermem.io,resources=ledgermemclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=getmnemo.io,resources=getmnemoclusters,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=getmnemo.io,resources=getmnemoclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services;persistentvolumeclaims;secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile brings the cluster Deployment + Service in line with the spec.
-func (r *LedgerMemClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("ledgermemcluster", req.NamespacedName)
+func (r *MnemoClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("getmnemocluster", req.NamespacedName)
 
-	var cluster ledgermemv1alpha1.LedgerMemCluster
+	var cluster getmnemov1alpha1.MnemoCluster
 	if err := r.Get(ctx, req.NamespacedName, &cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -80,7 +80,7 @@ func (r *LedgerMemClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
-func (r *LedgerMemClusterReconciler) reconcileDeployment(ctx context.Context, c *ledgermemv1alpha1.LedgerMemCluster) error {
+func (r *MnemoClusterReconciler) reconcileDeployment(ctx context.Context, c *getmnemov1alpha1.MnemoCluster) error {
 	image := c.Spec.Image
 	if image == "" {
 		image = defaultImage
@@ -96,7 +96,7 @@ func (r *LedgerMemClusterReconciler) reconcileDeployment(ctx context.Context, c 
 			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
-	labels := map[string]string{"app": "ledgermem", "instance": c.Name}
+	labels := map[string]string{"app": "getmnemo", "instance": c.Name}
 
 	desired := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: c.Name, Namespace: c.Namespace},
@@ -109,14 +109,14 @@ func (r *LedgerMemClusterReconciler) reconcileDeployment(ctx context.Context, c 
 			ObjectMeta: metav1.ObjectMeta{Labels: labels},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
-					Name:      "ledgermem",
+					Name:      "getmnemo",
 					Image:     image,
 					Resources: res,
 					Ports:     []corev1.ContainerPort{{ContainerPort: httpPort, Name: "http"}},
 					Env: []corev1.EnvVar{
-						{Name: "LEDGERMEM_DB_HOST", Value: c.Spec.Postgres.Host},
-						{Name: "LEDGERMEM_DB_NAME", Value: c.Spec.Postgres.Database},
-						{Name: "LEDGERMEM_VECTOR_PROVIDER", Value: c.Spec.VectorStore.Provider},
+						{Name: "GETMNEMO_DB_HOST", Value: c.Spec.Postgres.Host},
+						{Name: "GETMNEMO_DB_NAME", Value: c.Spec.Postgres.Database},
+						{Name: "GETMNEMO_VECTOR_PROVIDER", Value: c.Spec.VectorStore.Provider},
 					},
 				}},
 			},
@@ -129,8 +129,8 @@ func (r *LedgerMemClusterReconciler) reconcileDeployment(ctx context.Context, c 
 	return nil
 }
 
-func (r *LedgerMemClusterReconciler) reconcileService(ctx context.Context, c *ledgermemv1alpha1.LedgerMemCluster) error {
-	labels := map[string]string{"app": "ledgermem", "instance": c.Name}
+func (r *MnemoClusterReconciler) reconcileService(ctx context.Context, c *getmnemov1alpha1.MnemoCluster) error {
+	labels := map[string]string{"app": "getmnemo", "instance": c.Name}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{Name: c.Name, Namespace: c.Namespace},
 	}
@@ -150,9 +150,9 @@ func (r *LedgerMemClusterReconciler) reconcileService(ctx context.Context, c *le
 }
 
 // SetupWithManager registers the controller with the manager.
-func (r *LedgerMemClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MnemoClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&ledgermemv1alpha1.LedgerMemCluster{}).
+		For(&getmnemov1alpha1.MnemoCluster{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Complete(r)

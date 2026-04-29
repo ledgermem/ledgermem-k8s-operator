@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
+	getmnemov1alpha1 "github.com/getmnemo/getmnemo-k8s-operator/api/v1alpha1"
 )
 
 // TestIntOrStringHelper is a smoke test that does NOT require envtest —
@@ -22,24 +22,24 @@ func TestIntOrStringHelper(t *testing.T) {
 // TestSchemeRegistration verifies our types are registered with the scheme
 // builder — catches deepCopy/SchemeBuilder regressions.
 func TestSchemeRegistration(t *testing.T) {
-	scheme := ledgermemv1alpha1.SchemeBuilder
+	scheme := getmnemov1alpha1.SchemeBuilder
 	if scheme == nil {
 		t.Fatal("scheme builder is nil")
 	}
-	if got := ledgermemv1alpha1.GroupVersion.String(); got != "ledgermem.io/v1alpha1" {
+	if got := getmnemov1alpha1.GroupVersion.String(); got != "getmnemo.io/v1alpha1" {
 		t.Fatalf("group version: %s", got)
 	}
 }
 
 // TestApiKeyDeepCopy verifies the hand-written DeepCopy is non-aliased.
 func TestApiKeyDeepCopy(t *testing.T) {
-	src := &ledgermemv1alpha1.ApiKey{
-		Spec: ledgermemv1alpha1.ApiKeySpec{
+	src := &getmnemov1alpha1.ApiKey{
+		Spec: getmnemov1alpha1.ApiKeySpec{
 			Name:   "ci",
 			Scopes: []string{"memories:read"},
 		},
 	}
-	cp := src.DeepCopyObject().(*ledgermemv1alpha1.ApiKey)
+	cp := src.DeepCopyObject().(*getmnemov1alpha1.ApiKey)
 	cp.Spec.Scopes[0] = "mutated"
 	if src.Spec.Scopes[0] != "memories:read" {
 		t.Fatal("deep copy aliased Scopes slice")

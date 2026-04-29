@@ -1,4 +1,4 @@
-// Command manager is the entrypoint for the LedgerMem operator.
+// Command manager is the entrypoint for the Mnemo operator.
 package main
 
 import (
@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
-	"github.com/ledgermem/ledgermem-k8s-operator/internal/controller"
+	getmnemov1alpha1 "github.com/getmnemo/getmnemo-k8s-operator/api/v1alpha1"
+	"github.com/getmnemo/getmnemo-k8s-operator/internal/controller"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(ledgermemv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(getmnemov1alpha1.AddToScheme(scheme))
 }
 
 func main() {
@@ -44,18 +44,18 @@ func main() {
 		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "ledgermem-operator.ledgermem.io",
+		LeaderElectionID:       "getmnemo-operator.getmnemo.io",
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err := (&controller.LedgerMemClusterReconciler{
+	if err := (&controller.MnemoClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to set up LedgerMemCluster controller")
+		log.Error(err, "unable to set up MnemoCluster controller")
 		os.Exit(1)
 	}
 	if err := (&controller.WorkspaceReconciler{

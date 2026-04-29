@@ -1,33 +1,33 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ledgermem-postgres
+  name: getmnemo-postgres
   namespace: default
 type: Opaque
 stringData:
   password: change-me
 ---
-apiVersion: ledgermem.io/v1alpha1
-kind: LedgerMemCluster
+apiVersion: getmnemo.io/v1alpha1
+kind: MnemoCluster
 metadata:
   name: prod
   namespace: default
 spec:
-  image: ghcr.io/ledgermem/ledgermem:latest
+  image: ghcr.io/getmnemo/getmnemo:latest
   replicas: 2
   postgres:
     host: postgres.default.svc.cluster.local
     port: 5432
-    database: ledgermem
+    database: getmnemo
     sslMode: require
     secretRef:
-      name: ledgermem-postgres
+      name: getmnemo-postgres
       key: password
   vectorStore:
     provider: pgvector
-    indexName: ledgermem_vectors
+    indexName: getmnemo_vectors
 ---
-apiVersion: ledgermem.io/v1alpha1
+apiVersion: getmnemo.io/v1alpha1
 kind: Workspace
 metadata:
   name: acme
@@ -39,7 +39,7 @@ spec:
   plan: enterprise
   retentionDays: 365
 ---
-apiVersion: ledgermem.io/v1alpha1
+apiVersion: getmnemo.io/v1alpha1
 kind: ApiKey
 metadata:
   name: acme-ci

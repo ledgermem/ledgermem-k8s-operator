@@ -5,10 +5,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// WorkspaceSpec defines a LedgerMem workspace, reconciled by calling the
-// admin API of the LedgerMemCluster referenced via ClusterRef.
+// WorkspaceSpec defines a Mnemo workspace, reconciled by calling the
+// admin API of the MnemoCluster referenced via ClusterRef.
 type WorkspaceSpec struct {
-	// ClusterRef is the name of the LedgerMemCluster in the same namespace.
+	// ClusterRef is the name of the MnemoCluster in the same namespace.
 	ClusterRef string `json:"clusterRef"`
 
 	Name          string `json:"name"`
@@ -26,7 +26,7 @@ type WorkspaceStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Workspace is a LedgerMem workspace managed by the operator.
+// Workspace is a Mnemo workspace managed by the operator.
 type Workspace struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

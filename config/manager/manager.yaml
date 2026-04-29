@@ -1,32 +1,32 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ledgermem-system
+  name: getmnemo-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ledgermem-operator
-  namespace: ledgermem-system
+  name: getmnemo-operator
+  namespace: getmnemo-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ledgermem-operator
-  namespace: ledgermem-system
+  name: getmnemo-operator
+  namespace: getmnemo-system
   labels:
-    app: ledgermem-operator
+    app: getmnemo-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ledgermem-operator
+      app: getmnemo-operator
   template:
     metadata:
       labels:
-        app: ledgermem-operator
+        app: getmnemo-operator
     spec:
-      serviceAccountName: ledgermem-operator
+      serviceAccountName: getmnemo-operator
       securityContext:
         runAsNonRoot: true
         seccompProfile: { type: RuntimeDefault }
@@ -35,7 +35,7 @@ spec:
           # Pinned tag — overlays / kustomize edits should bump this rather
           # than relying on :latest, which prevents reproducible rollouts and
           # can silently introduce breaking operator changes.
-          image: ghcr.io/ledgermem/ledgermem-k8s-operator:v0.1.0
+          image: ghcr.io/getmnemo/getmnemo-k8s-operator:v0.1.0
           args:
             - --leader-elect
           ports:

@@ -23,10 +23,10 @@ type VectorStoreSpec struct {
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
 }
 
-// LedgerMemClusterSpec defines the desired state of a LedgerMemCluster.
-type LedgerMemClusterSpec struct {
+// MnemoClusterSpec defines the desired state of a MnemoCluster.
+type MnemoClusterSpec struct {
 	// Image to deploy.
-	// +kubebuilder:default="ghcr.io/ledgermem/ledgermem:latest"
+	// +kubebuilder:default="ghcr.io/getmnemo/getmnemo:latest"
 	Image string `json:"image,omitempty"`
 
 	// Replicas — number of pods.
@@ -41,8 +41,8 @@ type LedgerMemClusterSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-// LedgerMemClusterStatus reflects observed state.
-type LedgerMemClusterStatus struct {
+// MnemoClusterStatus reflects observed state.
+type MnemoClusterStatus struct {
 	// ObservedGeneration is the .metadata.generation the controller most
 	// recently reconciled. Consumers (kubectl wait, GitOps tooling) compare
 	// it against .metadata.generation to know whether ReadyReplicas reflects
@@ -58,44 +58,44 @@ type LedgerMemClusterStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// LedgerMemCluster is a managed LedgerMem deployment.
-type LedgerMemCluster struct {
+// MnemoCluster is a managed Mnemo deployment.
+type MnemoCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              LedgerMemClusterSpec   `json:"spec,omitempty"`
-	Status            LedgerMemClusterStatus `json:"status,omitempty"`
+	Spec              MnemoClusterSpec   `json:"spec,omitempty"`
+	Status            MnemoClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// LedgerMemClusterList lists clusters.
-type LedgerMemClusterList struct {
+// MnemoClusterList lists clusters.
+type MnemoClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LedgerMemCluster `json:"items"`
+	Items           []MnemoCluster `json:"items"`
 }
 
 // DeepCopyObject — runtime.Object impl.
-func (l *LedgerMemCluster) DeepCopyObject() runtime.Object     { return l.deepCopy() }
-func (l *LedgerMemClusterList) DeepCopyObject() runtime.Object { return l.deepCopy() }
+func (l *MnemoCluster) DeepCopyObject() runtime.Object     { return l.deepCopy() }
+func (l *MnemoClusterList) DeepCopyObject() runtime.Object { return l.deepCopy() }
 
-func (l *LedgerMemCluster) deepCopy() *LedgerMemCluster {
+func (l *MnemoCluster) deepCopy() *MnemoCluster {
 	if l == nil {
 		return nil
 	}
-	out := &LedgerMemCluster{TypeMeta: l.TypeMeta}
+	out := &MnemoCluster{TypeMeta: l.TypeMeta}
 	l.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	out.Spec = l.Spec
 	out.Status = *l.Status.DeepCopy()
 	return out
 }
 
-func (l *LedgerMemClusterList) deepCopy() *LedgerMemClusterList {
+func (l *MnemoClusterList) deepCopy() *MnemoClusterList {
 	if l == nil {
 		return nil
 	}
-	out := &LedgerMemClusterList{TypeMeta: l.TypeMeta, ListMeta: *l.ListMeta.DeepCopy()}
-	out.Items = make([]LedgerMemCluster, len(l.Items))
+	out := &MnemoClusterList{TypeMeta: l.TypeMeta, ListMeta: *l.ListMeta.DeepCopy()}
+	out.Items = make([]MnemoCluster, len(l.Items))
 	for i := range l.Items {
 		out.Items[i] = *l.Items[i].deepCopy()
 	}
@@ -103,7 +103,7 @@ func (l *LedgerMemClusterList) deepCopy() *LedgerMemClusterList {
 }
 
 // DeepCopy returns a deep copy of the status.
-func (s *LedgerMemClusterStatus) DeepCopy() *LedgerMemClusterStatus {
+func (s *MnemoClusterStatus) DeepCopy() *MnemoClusterStatus {
 	if s == nil {
 		return nil
 	}

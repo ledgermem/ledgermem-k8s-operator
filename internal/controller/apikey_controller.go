@@ -18,10 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	ledgermemv1alpha1 "github.com/ledgermem/ledgermem-k8s-operator/api/v1alpha1"
+	getmnemov1alpha1 "github.com/getmnemo/getmnemo-k8s-operator/api/v1alpha1"
 )
 
-// ApiKeyReconciler creates a key against the LedgerMem admin API and writes
+// ApiKeyReconciler creates a key against the Mnemo admin API and writes
 // the resulting plaintext token into a Secret in the same namespace.
 type ApiKeyReconciler struct {
 	client.Client
@@ -29,15 +29,15 @@ type ApiKeyReconciler struct {
 	HTTPClient *http.Client
 }
 
-// +kubebuilder:rbac:groups=ledgermem.io,resources=apikeys,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ledgermem.io,resources=apikeys/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=getmnemo.io,resources=apikeys,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=getmnemo.io,resources=apikeys/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is the API key reconciler entrypoint.
 func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithValues("apikey", req.NamespacedName)
 
-	var key ledgermemv1alpha1.ApiKey
+	var key getmnemov1alpha1.ApiKey
 	if err := r.Get(ctx, req.NamespacedName, &key); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -49,7 +49,7 @@ func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Resolve workspace id via the referenced Workspace CR.
-	var ws ledgermemv1alpha1.Workspace
+	var ws getmnemov1alpha1.Workspace
 	if err := r.Get(ctx, types.NamespacedName{Name: key.Spec.WorkspaceRef, Namespace: key.Namespace}, &ws); err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, client.IgnoreNotFound(err)
 	}
@@ -131,7 +131,7 @@ func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// reconcile to issue a *second* key.
 	if err := r.Status().Update(ctx, &key); err != nil {
 		if apierrors.IsConflict(err) {
-			var fresh ledgermemv1alpha1.ApiKey
+			var fresh getmnemov1alpha1.ApiKey
 			if getErr := r.Get(ctx, req.NamespacedName, &fresh); getErr != nil {
 				return ctrl.Result{}, getErr
 			}
@@ -149,7 +149,7 @@ func (r *ApiKeyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager registers the controller.
 func (r *ApiKeyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&ledgermemv1alpha1.ApiKey{}).
+		For(&getmnemov1alpha1.ApiKey{}).
 		Owns(&corev1.Secret{}).
 		Complete(r)
 }

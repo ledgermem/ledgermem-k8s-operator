@@ -1,4 +1,4 @@
-IMG ?= ghcr.io/ledgermem/ledgermem-k8s-operator:latest
+IMG ?= ghcr.io/getmnemo/getmnemo-k8s-operator:latest
 
 .PHONY: all build test docker-build deploy undeploy manifests fmt vet
 

@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: workspaces.ledgermem.io
+  name: workspaces.getmnemo.io
 spec:
-  group: ledgermem.io
+  group: getmnemo.io
   names:
     kind: Workspace
     listKind: WorkspaceList
